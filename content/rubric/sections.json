@@ -1,0 +1,266 @@
+{
+  "status": "runtime_connected_ark",
+  "course_id": "rubric-intro",
+  "title": "Rubric 跑分流程",
+  "source": "content/rubric/material.md",
+  "sections": [
+    {
+      "id": "rubric-01-welcome",
+      "title": "开场与全貌",
+      "type": "explanation",
+      "goal": "称呼姓名、自我介绍、说出课程标题，预告三个方面；本节只开场，实际内容由下一节讲",
+      "material": [
+        "Rubric 是评估课堂回复的一组具体检查标准；本次讲解 Rubric 流程，不实际跑分，不给学生评分。",
+        "简要路线：固定测试片段、两路各续写一轮、按同标准判分、汇总对照。",
+        "首次主动开课介绍：我是三茅老师，一个爱穿格子衫的资深 AI 从业者。",
+        "说出课程标题与三点预告后提示“先从第一部分开始”，本节即可结束；不要在开场展开后续专业细节。"
+      ],
+      "milestones": [
+        {
+          "id": "welcome-1",
+          "goal": "问候姓名并完整说出课程标题"
+        },
+        {
+          "id": "welcome-2",
+          "goal": "依次预告三个方面并开始第一部分"
+        }
+      ],
+      "board_requirements": "仅必要关键词；简单偏好选择只放字幕",
+      "completion_rule": "必要讲解和板书已实际呈现，选用的理解检查已得到回应或用户明确跳过；不把已讲完、跳过或提示后答对等同于独立掌握。",
+      "next_section_id": "rubric-02-case",
+      "understanding_check": null
+    },
+    {
+      "id": "rubric-02-case",
+      "title": "固定一个 case",
+      "type": "explanation",
+      "goal": "理解评测单位与共同输入",
+      "material": [
+        "同一 case 的输入包括上文师生对话、当前学生输入、对应教学任务或环节。",
+        "评测对象是固定片段后的下一轮老师回复，不是模拟学生陪老师完成整节课。"
+      ],
+      "milestones": [
+        {
+          "id": "case-1",
+          "goal": "讲明三类输入"
+        },
+        {
+          "id": "case-2",
+          "goal": "讲明下一轮回复的评测边界"
+        }
+      ],
+      "board_requirements": "三类输入汇入同一 case，或无底色简短列表",
+      "completion_rule": "必要讲解和板书已实际呈现，选用的理解检查已得到回应或用户明确跳过；不把已讲完、跳过或提示后答对等同于独立掌握。",
+      "next_section_id": "rubric-03-generation",
+      "understanding_check": {
+        "question": "两版拿到的学生回答不同，还能直接比较 Prompt 好坏吗？为什么？",
+        "evidence": "说明共同输入与可比性，不能把不同上下文的差异直接归因于 Prompt。",
+        "when": "对应要点已讲清，且学生未在此前回答中充分说明时使用。",
+        "feedback": "理由充分则确认推进；缺理由追问；有误针对卡点补讲；提示后表现不视为独立掌握。"
+      }
+    },
+    {
+      "id": "rubric-03-generation",
+      "title": "同一个 case 分两路生成",
+      "type": "explanation",
+      "goal": "解释两版配置如何得到两版回复",
+      "material": [
+        "同一 case 分别交给旧版 Prompt 配置与新版 V2 配置，各生成下一轮回复。",
+        "回复包含口播与板书或组件指令。原图两版教学模型均为 gemini-3.8-flash。",
+        "原图 V2 同时变化了 SystemPrompt、任务 YAML，并把发言话术置空；不能只归因于一个字段。"
+      ],
+      "milestones": [
+        {
+          "id": "generation-1",
+          "goal": "共享的 case 输入"
+        },
+        {
+          "id": "generation-2",
+          "goal": "两路各续写一轮"
+        },
+        {
+          "id": "generation-3",
+          "goal": "回复含口播与板书指令"
+        }
+      ],
+      "board_requirements": "实际逐步画出一个共享输入节点、回复 A/B 两节点以及两条分支连线",
+      "completion_rule": "必要讲解和板书已实际呈现，选用的理解检查已得到回应或用户明确跳过；不把已讲完、跳过或提示后答对等同于独立掌握。",
+      "next_section_id": "rubric-04-judge",
+      "understanding_check": {
+        "question": "Sys、任务 YAML、话术同时改变，能断定效果变化来自 Sys 吗？为什么？",
+        "evidence": "多个变量变化，无法单独归因。",
+        "when": "对应要点已讲清，且学生未在此前回答中充分说明时使用。",
+        "feedback": "理由充分则确认推进；缺理由追问；有误针对卡点补讲；提示后表现不视为独立掌握。"
+      }
+    },
+    {
+      "id": "rubric-04-judge",
+      "title": "裁判与 Rubric 检查项",
+      "type": "explanation",
+      "goal": "分清判断执行者、标准与单项结果",
+      "material": [
+        "裁判同时收到课堂上下文、待评回复、当前 case 的 Rubric，按同一组标准分别判断两版。",
+        "原图裁判为 deepseek-v4-pro、thinking high；这是历史实验记录，不是当前老师模型。",
+        "一个检查项由维度、Must-have/Nice-to-have 级别和可判定标准组成，按 case 选用，不要求每条 case 必测九个维度。",
+        "九个维度：学生判断、指令遵循、数学正确性、板书质量、流程执行、答案保护、讲解质量、讲解逻辑、语言表达。",
+        "单项结果为达标、不达标、不适用，并附理由；不是直接投票选择版本。",
+        "判卷类比：同一个 case 像相同题目及作答情境；两版回复像两份答卷；Rubric 是评分标准；裁判模型是按标准检查的阅卷老师。逐项是达标、不达标、不适用，整体按 Must-have 否决制，不是维度分数相加。"
+      ],
+      "milestones": [
+        {
+          "id": "judge-1",
+          "goal": "分清裁判和标准"
+        },
+        {
+          "id": "judge-2",
+          "goal": "说明检查项组成及按 case 选用"
+        },
+        {
+          "id": "judge-3",
+          "goal": "说明三种单项结果"
+        }
+      ],
+      "board_requirements": "按需展示输入汇入裁判关系图；维度用文字，不做九个彩色卡片",
+      "completion_rule": "必要讲解和板书已实际呈现，选用的理解检查已得到回应或用户明确跳过；不把已讲完、跳过或提示后答对等同于独立掌握。",
+      "next_section_id": "rubric-05-gate",
+      "understanding_check": {
+        "question": "只写“讲得好”作为 Rubric，为什么难以稳定判断？",
+        "evidence": "缺少具体、可观察、可判定的要求。",
+        "when": "对应要点已讲清，且学生未在此前回答中充分说明时使用。",
+        "feedback": "理由充分则确认推进；缺理由追问；有误针对卡点补讲；提示后表现不视为独立掌握。"
+      }
+    },
+    {
+      "id": "rubric-05-gate",
+      "title": "整条 PASS 与 FAIL",
+      "type": "explanation",
+      "goal": "理解 Must-have 否决制",
+      "material": [
+        "原图约定：任意 Must-have 不达标则整条 FAIL；没有 Must-have 不达标则整条 PASS。",
+        "Nice-to-have 不决定整条通过或失败。此规则是原图实验约定，不宣称所有评测都使用相同聚合方式。"
+      ],
+      "milestones": [
+        {
+          "id": "gate-1",
+          "goal": "必需项否决关系"
+        },
+        {
+          "id": "gate-2",
+          "goal": "加分项不决定整条结果"
+        }
+      ],
+      "board_requirements": "一句规则及按需的判断分支，不提前公布案例输赢",
+      "completion_rule": "必要讲解和板书已实际呈现，选用的理解检查已得到回应或用户明确跳过；不把已讲完、跳过或提示后答对等同于独立掌握。",
+      "next_section_id": "rubric-06-rates",
+      "understanding_check": {
+        "question": "必需项全达标，一项加分项失败，整条 PASS 还是 FAIL？为什么？",
+        "evidence": "PASS；Nice-to-have 不参与必需项否决。",
+        "when": "对应要点已讲清，且学生未在此前回答中充分说明时使用。",
+        "feedback": "理由充分则确认推进；缺理由追问；有误针对卡点补讲；提示后表现不视为独立掌握。"
+      }
+    },
+    {
+      "id": "rubric-06-rates",
+      "title": "整条通过率与单项通过率",
+      "type": "explanation",
+      "goal": "区分统计单位和 N/A 的分母处理",
+      "material": [
+        "整条通过率为 PASS case 数除以全部 case 数。",
+        "单项通过率为达标数除以达标数与不达标数之和；N/A 不适用不计入单项分母。",
+        "单项通过率高不代表整条通过率高。"
+      ],
+      "milestones": [
+        {
+          "id": "rates-1",
+          "goal": "整条通过率的统计单位"
+        },
+        {
+          "id": "rates-2",
+          "goal": "单项分母排除 N/A"
+        }
+      ],
+      "board_requirements": "两行无底色公式，局部划线强调分母",
+      "completion_rule": "必要讲解和板书已实际呈现，选用的理解检查已得到回应或用户明确跳过；不把已讲完、跳过或提示后答对等同于独立掌握。",
+      "next_section_id": "rubric-07-comparison",
+      "understanding_check": {
+        "question": "6 次达标、2 次不达标、2 次 N/A，单项通过率分母是多少？为什么？",
+        "evidence": "8；不适用不进入分母。",
+        "when": "对应要点已讲清，且学生未在此前回答中充分说明时使用。",
+        "feedback": "理由充分则确认推进；缺理由追问；有误针对卡点补讲；提示后表现不视为独立掌握。"
+      }
+    },
+    {
+      "id": "rubric-07-comparison",
+      "title": "原图案例逐项对照",
+      "type": "explanation",
+      "goal": "用历史案例解释数学正确仍可能整条失败",
+      "material": [
+        "从一楼到二楼需两分钟，爬到四楼是三段、六分钟。学生先答八分钟，纠正后说“没事你继续讲”，另有动态板书提醒。",
+        "旧版明确楼层位置是点、爬楼过程是段及点段数量差异；V2 仅写间隔定义，未建立点段映射。",
+        "原裁判记录：两版数学正确性均达标；V2 板书质量和点段映射讲解质量两项 Must-have 不达标。",
+        "V2 尚未进入例题 1，相关答案保护项为不适用，不能当作做错。",
+        "最后揭示原图记录：旧版 PASS、V2 FAIL。该结果不是本次重新评判，不能推广为版本的普遍优劣。"
+      ],
+      "milestones": [
+        {
+          "id": "comparison-1",
+          "goal": "交代原案例必要前提"
+        },
+        {
+          "id": "comparison-2",
+          "goal": "说明两版板书和讲解差异"
+        },
+        {
+          "id": "comparison-3",
+          "goal": "依照原裁判记录揭示整条结果"
+        }
+      ],
+      "board_requirements": "按讲解先画点段关系，再逐项比较，最后显示原图结论",
+      "completion_rule": "必要讲解和板书已实际呈现，选用的理解检查已得到回应或用户明确跳过；不把已讲完、跳过或提示后答对等同于独立掌握。",
+      "next_section_id": "rubric-08-wrapup",
+      "understanding_check": {
+        "question": "数学都算对，为什么 V2 仍失败？指出证据。",
+        "evidence": "板书质量和点段映射讲解两项 Must-have 未达标；数学正确无法抵消。",
+        "when": "对应要点已讲清，且学生未在此前回答中充分说明时使用。",
+        "feedback": "理由充分则确认推进；缺理由追问；有误针对卡点补讲；提示后表现不视为独立掌握。"
+      }
+    },
+    {
+      "id": "rubric-08-wrapup",
+      "title": "收束与结论边界",
+      "type": "explanation",
+      "goal": "串起流程并限定证据范围",
+      "material": [
+        "回顾共同输入、Rubric 逐项判断、按预设规则汇总三条主线。",
+        "对比 Prompt 应尽量固定测试集、教学模型、采样参数、Rubric 和裁判配置，重要结论需要重复运行和人工复核。",
+        "一条 case 只能说明该案例的证据；不生成学习评估报告、作业或下一步计划。"
+      ],
+      "milestones": [
+        {
+          "id": "wrapup-1",
+          "goal": "回顾输入判断汇总"
+        },
+        {
+          "id": "wrapup-2",
+          "goal": "说明单个案例的证据边界"
+        }
+      ],
+      "board_requirements": "简短文字回顾，必要时复用已显示流程",
+      "completion_rule": "必要讲解和板书已实际呈现，选用的理解检查已得到回应或用户明确跳过；不把已讲完、跳过或提示后答对等同于独立掌握。",
+      "next_section_id": null,
+      "understanding_check": {
+        "question": "面试时如何解释两版对比需要固定哪些条件？",
+        "evidence": "依据已讲内容说明共同输入、教学模型、采样参数、Rubric、裁判配置和结论边界。",
+        "when": "对应要点已讲清，且学生未在此前回答中充分说明时使用。",
+        "feedback": "理由充分则确认推进；缺理由追问；有误针对卡点补讲；提示后表现不视为独立掌握。"
+      }
+    }
+  ],
+  "spoken_title": "Rubric：一条课堂回复，怎样被评测",
+  "preview": [
+    "固定 case，并生成两版回复",
+    "裁判怎样按 Rubric 逐项判断",
+    "汇总结果，并用原图案例比较"
+  ],
+  "teacher_intro": "我是三茅老师，一个爱穿格子衫的资深 AI 从业者"
+}

@@ -1,0 +1,186 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "speech",
+    "phase",
+    "await_user",
+    "done",
+    "adaptation",
+    "board"
+  ],
+  "properties": {
+    "speech": {
+      "type": "string"
+    },
+    "phase": {
+      "type": "string",
+      "enum": [
+        "开场",
+        "讲解",
+        "轻互动",
+        "提问",
+        "追问",
+        "结束"
+      ]
+    },
+    "await_user": {
+      "type": "boolean"
+    },
+    "done": {
+      "type": "boolean"
+    },
+    "adaptation": {
+      "type": "string"
+    },
+    "board": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title",
+        "points",
+        "example",
+        "question",
+        "flow",
+        "table",
+        "highlight",
+        "diagram",
+        "student_question",
+        "solution"
+      ],
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "当前板书标题，简短具体"
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "当前应保留的讲解要点，最多 5 条短句；面试时不展示参考答案或评价标准"
+        },
+        "example": {
+          "type": "string",
+          "description": "配合讲解的简短例子，没有则为空字符串"
+        },
+        "question": {
+          "type": "string",
+          "description": "当前面试问题或轻互动问题，没有则为空字符串"
+        },
+        "flow": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "线性流程，最多5项短语；没有则空数组"
+        },
+        "table": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "columns",
+            "rows"
+          ],
+          "properties": {
+            "columns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "rows": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "cells"
+                ],
+                "properties": {
+                  "cells": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "highlight": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "本轮局部强调的关键词，最多3个"
+        },
+        "diagram": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "nodes",
+            "edges"
+          ],
+          "properties": {
+            "nodes": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "label"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "label": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "edges": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "from",
+                  "to",
+                  "label"
+                ],
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  },
+                  "label": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "description": "最多8节点的有向无环结构图；节点文字最多15字，边只引用已有id，无图则两数组为空。"
+        },
+        "student_question": {
+          "type": "string",
+          "description": "学生实际提出的当前关键问题，不能虚构；没有则空字符串"
+        },
+        "solution": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "老师针对该问题的关键思路或解法，最多3条短句；面试时不泄漏参考答案，留空"
+        }
+      }
+    }
+  }
+}

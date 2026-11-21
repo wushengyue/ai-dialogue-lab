@@ -1,0 +1,186 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="2720" viewBox="0 0 1600 2720" role="img" aria-labelledby="title desc">
+<title id="title">Rubric 跑分是怎么运行的</title>
+<desc id="desc">课堂回复的 Rubric 评测通用流程示意：固定测试片段，不同版本的 Prompt 分别调用教学模型生成下一轮回复；裁判模型按每条 case 的 rubric 逐项判断；按预设规则计算整条通过，再汇总对照。本图采用 Must-have 否决制作为示例。</desc>
+<defs>
+  <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto-start-reverse"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#8797ad" stroke-width="1.6"/></marker>
+  <style>
+    text{font-family:"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;fill:#1b2c42}
+    .title{font-size:42px;font-weight:750;letter-spacing:-1px}.sub{font-size:20px;fill:#62748a}
+    .step{font-size:28px;font-weight:750;fill:#1b2c42}.label{font-size:16px;font-weight:700;letter-spacing:1px;fill:#62748a}.heading{font-size:25px;font-weight:700}
+    .body{font-size:20px}.small{font-size:17px;fill:#62748a}.tiny{font-size:15px;fill:#62748a}
+    .blue{fill:#315fd3}.orange{fill:#b96227}.green{fill:#17744d}.red{fill:#bd4550}.white{fill:#fff}
+    .line{fill:none;stroke:#8797ad;stroke-width:2.5;marker-end:url(#arrow);stroke-linejoin:round}
+    .panel{fill:#fff;stroke:#dce4ee;stroke-width:1.5}
+  </style>
+</defs>
+<rect width="1600" height="2720" fill="#f3f6fa"/>
+<rect x="64" y="52" width="8" height="79" rx="4" fill="#4668d9"/>
+<text x="94" y="86" class="title">规则｜Rubric 跑分是怎么运行的？</text>
+<text x="96" y="124" class="sub">固定课堂片段 → 两版各续写一轮 → 模型逐项判分 → 汇总对照</text>
+<rect x="1284" y="63" width="252" height="43" rx="21" fill="#e7edfa"/>
+<text x="1410" y="91" text-anchor="middle" class="small blue">单轮续写 · Rubric 评测</text>
+
+<!-- 1: generation -->
+<text x="64" y="185" class="step">01 / 准备同一批测试片段</text>
+<rect x="64" y="204" width="418" height="222" rx="18" class="panel"/>
+<text x="90" y="247" class="heading">固定的课堂上下文</text>
+<text x="90" y="290" class="body">上文师生对话 + 当前学生输入</text>
+<text x="90" y="326" class="body">对应教学任务 / 当前环节</text>
+<line x1="90" y1="348" x2="456" y2="348" stroke="#e2e8f1"/>
+<text x="90" y="380" class="small">同一 case，两版使用相同上文对话</text>
+<text x="90" y="406" class="small">不是模拟学生陪老师上完整节课</text>
+<path d="M482 315 H542" class="line"/>
+
+<text x="564" y="185" class="step">02 / 教学模型分别生成下一轮老师回复</text>
+<rect x="564" y="204" width="972" height="222" rx="18" class="panel"/>
+<rect x="584" y="224" width="452" height="125" rx="12" fill="#edf3ff"/>
+<text x="606" y="258" class="heading blue">旧版 Prompt</text>
+<text x="606" y="291" class="body">旧版配置 → 老师回复 A</text>
+<text x="606" y="326" class="small">口播 + 板书 / 组件指令</text>
+<rect x="1056" y="224" width="460" height="125" rx="12" fill="#fff2e6"/>
+<text x="1078" y="258" class="heading orange">新版 V2 Prompt</text>
+<text x="1078" y="291" class="body">新 SystemPrompt + 新任务 YAML</text>
+<text x="1078" y="326" class="small">发言话术置空 → 老师回复 B</text>
+<text x="590" y="390" class="body">两版 Teaching：gemini-3.8-flash</text>
+<text x="1128" y="390" class="small">每条 case，各生成一轮</text>
+<path d="M1536 315 H1564 V560 H1536" class="line"/>
+
+<!-- Unified judge stage: rubric + judge execution -->
+<g id="judge-stage" aria-label="裁判评测：裁判模型与评分依据">
+<text x="64" y="481" class="step">03 / 裁判评测 = 裁判模型（JUDGE）+ 评分依据（RUBRIC）</text>
+<rect x="64" y="500" width="1472" height="750" rx="18" class="panel"/>
+<rect x="64" y="521" width="5" height="63" rx="2" fill="#4668d9"/>
+<text x="90" y="542" class="heading">裁判模型：deepseek-v4-pro · thinking:high</text>
+<text x="90" y="577" class="body">输入：课堂上下文 + 待评回复 + 对应 rubric；两版使用同一组标准</text>
+<text x="90" y="622" class="heading">评分依据：把“好回复”拆成 9 个维度</text>
+<text x="90" y="657" class="small">下列为维度释义；实际按 case 选用，具体检查项 = 维度 + 级别（Must-have / Nice-to-have）+ 可判定标准</text>
+<rect x="90" y="680" width="450" height="88" rx="10" fill="#f4f6fa"/>
+<text x="106" y="707" class="body blue" font-weight="700">01 · 学生判断</text>
+<text x="106" y="731" class="small">能否识别学生的理解程度与卡点，</text>
+<text x="106" y="753" class="small">据此决定追问、提示还是直接讲解。</text>
+<rect x="568" y="680" width="450" height="88" rx="10" fill="#f4f6fa"/>
+<text x="584" y="707" class="body blue" font-weight="700">02 · 指令遵循</text>
+<text x="584" y="731" class="small">是否遵守教学与输出协议，</text>
+<text x="584" y="753" class="small">例如口播结尾、组件调用和结束标记。</text>
+<rect x="1046" y="680" width="450" height="88" rx="10" fill="#f4f6fa"/>
+<text x="1062" y="707" class="body blue" font-weight="700">03 · 数学正确性</text>
+<text x="1062" y="731" class="small">概念、数量关系与计算是否正确，</text>
+<text x="1062" y="753" class="small">结论是否满足题目条件。</text>
+<rect x="90" y="780" width="450" height="88" rx="10" fill="#f4f6fa"/>
+<text x="106" y="807" class="body blue" font-weight="700">04 · 板书质量</text>
+<text x="106" y="831" class="small">关键过程与关系是否同步可见，</text>
+<text x="106" y="853" class="small">而不是仅靠口播或遗漏关键对应。</text>
+<rect x="568" y="780" width="450" height="88" rx="10" fill="#f4f6fa"/>
+<text x="584" y="807" class="body blue" font-weight="700">05 · 流程执行</text>
+<text x="584" y="831" class="small">是否在当前环节完成应做的任务，</text>
+<text x="584" y="853" class="small">按条件推进、切换或结束。</text>
+<rect x="1046" y="780" width="450" height="88" rx="10" fill="#f4f6fa"/>
+<text x="1062" y="807" class="body blue" font-weight="700">06 · 答案保护</text>
+<text x="1062" y="831" class="small">是否保留学生独立思考和作答空间，</text>
+<text x="1062" y="853" class="small">不在需要学生尝试时提前给出答案。</text>
+<rect x="90" y="880" width="450" height="88" rx="10" fill="#f4f6fa"/>
+<text x="106" y="907" class="body blue" font-weight="700">07 · 讲解质量</text>
+<text x="106" y="931" class="small">是否讲到关键原因与易错点，</text>
+<text x="106" y="953" class="small">借助具体情境，把抽象关系讲明白。</text>
+<rect x="568" y="880" width="450" height="88" rx="10" fill="#f4f6fa"/>
+<text x="584" y="907" class="body blue" font-weight="700">08 · 讲解逻辑</text>
+<text x="584" y="931" class="small">推导与承接是否连贯，</text>
+<text x="584" y="953" class="small">前提到结论有依据，不跳步、不矛盾。</text>
+<rect x="1046" y="880" width="450" height="88" rx="10" fill="#f4f6fa"/>
+<text x="1062" y="907" class="body blue" font-weight="700">09 · 语言表达</text>
+<text x="1062" y="931" class="small">措辞是否清楚、自然、易懂，</text>
+<text x="1062" y="953" class="small">避免歧义与不必要的表达负担。</text>
+<text x="90" y="999" class="tiny">检查项示例：学生明确说“你继续讲”后，是否直接给出有效讲解？ → 学生判断 · Must-have</text>
+<line x1="90" y1="1038" x2="1510" y2="1038" stroke="#dce4ee" stroke-width="1.5"/>
+<text x="90" y="1075" class="label">执行判分 / RUBRIC 随课堂上下文与待评回复一起交给裁判，而非独立跑一步</text>
+<rect x="90" y="1104" width="440" height="62" rx="11" fill="#e8f5ee"/>
+<text x="310" y="1144" text-anchor="middle" class="heading green">✓ 达标</text>
+<rect x="550" y="1104" width="440" height="62" rx="11" fill="#fbecee"/>
+<text x="770" y="1144" text-anchor="middle" class="heading red">× 不达标</text>
+<rect x="1010" y="1104" width="500" height="62" rx="11" fill="#edf0f5"/>
+<text x="1260" y="1144" text-anchor="middle" class="heading">— 不适用</text>
+<text x="90" y="1202" class="body">输出每个检查项的判定和理由，供定位问题与人工复核</text>
+<text x="90" y="1230" class="small">不是直接选“哪版更好”，而是先判断“各版是否满足具体标准”</text>
+</g>
+<path d="M800 1250 V1309" class="line"/>
+
+<!-- 3: aggregation -->
+<text x="64" y="1306" class="step">04 / 按预设规则汇总（此处以 MUST-HAVE 否决制为例）</text>
+<rect x="64" y="1326" width="1472" height="221" rx="18" class="panel"/>
+<line x1="800" y1="1354" x2="800" y2="1519" stroke="#e2e8f1" stroke-width="1.5"/>
+<text x="92" y="1370" class="heading">整条 case：有没有踩必需项红线？</text>
+<text x="92" y="1411" class="body red">任意一个 Must-have 判 × → 整条 FAIL</text>
+<text x="92" y="1445" class="body green">没有 Must-have 判 × → 整条 PASS</text>
+<text x="92" y="1485" class="small">Nice-to-have 不决定整条通过 / 失败</text>
+<text x="92" y="1515" class="small">整条通过率 = PASS case 数 ÷ 全部 case 数</text>
+<text x="830" y="1370" class="heading">单项 rubric：具体能力是否达标？</text>
+<text x="830" y="1415" class="body">单项通过率 = ✓ 数 ÷（✓ 数 + × 数）</text>
+<text x="830" y="1453" class="body">— 不适用：不计入分母</text>
+<text x="830" y="1491" class="small">可按 Must-have / Nice-to-have、能力维度分别汇总</text>
+<text x="830" y="1521" class="small">所以：单项通过率高，不等于整条通过率高</text>
+
+<text x="64" y="1598" class="small">实验控制：比较 Prompt 时，尽量固定测试集、教学模型、采样参数、rubric 与裁判配置。</text>
+<text x="64" y="1630" class="tiny">阅读边界：此图是单轮续写评测示意；判分与聚合规则应预先约定，重要结论需重复运行并人工复核。</text>
+
+
+
+<!-- Clear separation between rules and worked example -->
+<line x1="64" y1="1672" x2="1536" y2="1672" stroke="#cbd6e5" stroke-width="2"/>
+<rect x="40" y="1704" width="1520" height="908" rx="24" fill="#eaf0f8"/>
+<rect x="64" y="1722" width="8" height="49" rx="4" fill="#4668d9"/>
+<text x="94" y="1759" font-size="36" font-weight="750">示例｜一个 case 如何完成评测</text>
+<!-- Worked case: source report case_001, text condensed -->
+<text x="64" y="1820" class="label">CASE 示例 / case_001 · 不封闭图形植树 · 讲解环节</text>
+<rect x="64" y="1840" width="1472" height="744" rx="18" class="panel"/>
+<text x="90" y="1878" class="heading">同一个课堂片段，怎样一步步判成 PASS / FAIL？</text>
+<text x="90" y="1908" class="tiny">来自原评测报告；以下输入、回复与标准均为摘要，判定沿用原裁判结果，不是重新跑分。</text>
+<rect x="90" y="1924" width="1420" height="75" rx="10" fill="#f4f6fa"/>
+<text x="108" y="1953" class="body">输入：从一楼到二楼要 2 分钟，爬到四楼要多久？学生先答 8 分钟，老师已纠正为 3 段、6 分钟。</text>
+<text x="108" y="1982" class="body">老师追问“为什么少 1”，学生沉默后说：“没事你继续讲”。另有提醒：配合动态文本板书。</text>
+<rect x="90" y="2015" width="700" height="112" rx="10" fill="#edf3ff"/>
+<text x="108" y="2045" class="body blue" font-weight="700">旧版回复摘要</text>
+<text x="108" y="2075" class="small">板书明确“楼层编号是点、爬楼过程是段，点数比段数多 1”。</text>
+<text x="108" y="2103" class="small">口播解释从一楼出发，随后进入植树例题，让学生先尝试。</text>
+<rect x="810" y="2015" width="700" height="112" rx="10" fill="#fff2e6"/>
+<text x="828" y="2045" class="body orange" font-weight="700">新版 V2 回复摘要</text>
+<text x="828" y="2075" class="small">解释从一楼出发；板书只写“间隔”的定义，口播解释间隔。</text>
+<text x="828" y="2103" class="small">追问“爬到 6 楼有几个间隔？”，尚未进入植树例题。</text>
+<text x="90" y="2160" class="body" font-weight="700">对应的 8 个检查项 → 裁判逐项判断（标准摘要）</text>
+<rect x="90" y="2176" width="700" height="74" rx="9" fill="#f4f6fa"/>
+<text x="104" y="2198" class="small" font-weight="700">1. 数学正确性 · Must-have</text>
+<text x="104" y="2220" class="small">4 个楼层位置对应 3 段，段数 = 点数 − 1。</text>
+<text x="104" y="2241" class="small blue">旧版 ✓　V2 ✓</text>
+<rect x="810" y="2176" width="700" height="74" rx="9" fill="#fff1f1"/>
+<text x="824" y="2198" class="small" font-weight="700">2. 板书质量 · Must-have</text>
+<text x="824" y="2220" class="small">板书同步呈现点、段及数量差异。</text>
+<text x="824" y="2241" class="small red">旧版 ✓　V2 ×：板书仅给间隔定义</text>
+<rect x="90" y="2258" width="700" height="74" rx="9" fill="#f4f6fa"/>
+<text x="104" y="2280" class="small" font-weight="700">3. 学生判断 · Must-have</text>
+<text x="104" y="2302" class="small">学生表示不会 / 放弃后，直接有效讲解。</text>
+<text x="104" y="2323" class="small blue">旧版 ✓　V2 ✓</text>
+<rect x="810" y="2258" width="700" height="74" rx="9" fill="#f4f6fa"/>
+<text x="824" y="2280" class="small" font-weight="700">4. 答案保护 · Must-have</text>
+<text x="824" y="2302" class="small">进入例题 1 时，保留学生先作答的空间。</text>
+<text x="824" y="2323" class="small blue">旧版 ✓　V2 —：尚未进入例题 1</text>
+<rect x="90" y="2340" width="700" height="74" rx="9" fill="#fff1f1"/>
+<text x="104" y="2362" class="small" font-weight="700">5. 讲解质量 · Must-have</text>
+<text x="104" y="2384" class="small">明确说明楼层位置是点、爬楼过程是段。</text>
+<text x="104" y="2405" class="small red">旧版 ✓　V2 ×：未建立点段映射</text>
+<rect x="810" y="2340" width="700" height="74" rx="9" fill="#f4f6fa"/>
+<text x="824" y="2362" class="small" font-weight="700">6. 讲解质量 · Must-have</text>
+<text x="824" y="2384" class="small">口播清晰、承接自然，不连抛多个不同问题。</text>
+<text x="824" y="2405" class="small blue">旧版 ✓　V2 ✓</text>
+<rect x="90" y="2422" width="700" height="74" rx="9" fill="#f4f6fa"/>
+<text x="104" y="2444" class="small" font-weight="700">7. 讲解质量 · Nice-to-have</text>
+<text x="104" y="2466" class="small">学生说“继续讲”后，仍用提问引导其思考。</text>
+<text x="104" y="2487" class="small blue">旧版 ✓　V2 ✓</text>
+<rect x="810" y="2422" width="700" height="74" rx="9" fill="#f4f6fa"/>
+<text x="824" y="2444" class="small" font-weight="700">8. 指令遵循 · Must-have</text>
+<text x="824" y="2466" class="small">结尾提问 / 陈述与结束标记符合环节状态。</text>
+<text x="824" y="2487" class="small blue">旧版 ✓　V2 ✓</text>
+<rect x="90" y="2516" width="1420" height="48" rx="10" fill="#eaf0fa"/>
+<text x="108" y="2547" class="body">整条结果：旧版 PASS；V2 FAIL。V2 有 2 项 Must-have 不达标，数学算对也不能抵消必需项失败。</text>
+
+
+<text x="1536" y="2670" text-anchor="end" class="tiny">绘制于 2026-11-10</text>
+</svg>

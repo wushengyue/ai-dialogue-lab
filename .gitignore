@@ -1,0 +1,12 @@
+.venv/
+.uv-cache/
+data/
+models/
+__pycache__/
+*.pyc
+.DS_Store
+.env
+.env.*
+!.env.example
+*.key
+*.pem
