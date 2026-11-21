@@ -71,7 +71,7 @@ function subtitle(who, text, state = '') {
   $('captionBar').dataset.speaker = who === '你' ? 'user' : 'teacher';
 }
 function teacherState(type = 'idle') {
-  if(type !== 'speaking') clearTeacherGesture();
+  if(type === 'listening' || type === 'thinking') clearTeacherGesture();
   $('teacherAvatar').dataset.state = type;
   const label = {speaking: '正在讲解', listening: '在听你说', thinking: '正在组织讲解', idle: '三茅老师'}[type] || '三茅老师';
   $('teacherState').textContent = label; $('teacherAvatar').setAttribute('aria-label', '三茅老师，' + label);
@@ -157,6 +157,7 @@ function addMessage(who, text, id = '') {
   transcript.push({who, text, id}); renderDebug();
 }
 function stopPlayback() {
+  clearTeacherGesture();
   stopBoardCamera();
   heldPlayback = null;
   speechAbort?.abort(); speechAbort = null;

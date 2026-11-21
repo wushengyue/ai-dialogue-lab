@@ -131,3 +131,12 @@
 .teacher-avatar[data-state=thinking] .hair{animation:hair-loading 1.05s ease-in-out infinite!important;stroke:#6b7db6;transform:none}.teacher-avatar[data-state=thinking] .hair-two{animation-delay:.17s!important}.teacher-avatar[data-state=thinking] .hair-three{animation-delay:.34s!important}
 @keyframes hair-loading{0%,70%,100%{opacity:.24}32%{opacity:1}}
 @media(prefers-reduced-motion:reduce){.teacher-avatar[data-state=thinking] .hair{animation:none!important;opacity:1;stroke:#6b7db6}}
+
+/* Align the complete portrait, and celebrate with exactly three rising hearts. */
+.teacher-avatar{top:-8px}.teacher-hearts{position:absolute;inset:0;pointer-events:none;display:none}.teacher-hearts i{--heart-drift:-13px;position:absolute;left:29px;top:44px;font-family:Arial,sans-serif;font-size:18px;font-style:normal;color:#ef789a;line-height:1;opacity:0;filter:drop-shadow(0 1px 1px #fff)}.teacher-hearts i:nth-child(2){--heart-drift:3px;left:40px;top:47px;color:#f28b72;font-size:15px;animation-delay:.2s!important}.teacher-hearts i:nth-child(3){--heart-drift:15px;left:48px;top:43px;color:#b58be6;font-size:17px;animation-delay:.4s!important}
+.teacher-avatar[data-gesture=encourage] .teacher-hearts{display:block}.teacher-avatar[data-gesture=encourage] .teacher-hearts i{animation:heart-bubble 1.65s ease-out both}.teacher-avatar[data-gesture=encourage] .hair-heart{display:none}.teacher-avatar[data-gesture=encourage] .hair-two{opacity:1}
+@keyframes heart-bubble{0%{opacity:0;transform:translate(0,6px) scale(.55)}20%{opacity:1}75%{opacity:.95}100%{opacity:0;transform:translate(var(--heart-drift),-42px) scale(1.12)}}
+/* Each loading hair has its own visible color and brightness phase. */
+.teacher-avatar[data-state=thinking] .hair{--hair-color:#4f84ff;stroke:var(--hair-color);stroke-width:4.5;filter:drop-shadow(0 0 2px var(--hair-color))}.teacher-avatar[data-state=thinking] .hair-two{--hair-color:#ed72a5}.teacher-avatar[data-state=thinking] .hair-three{--hair-color:#20b7aa}
+@keyframes hair-loading{0%,70%,100%{opacity:.3}32%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.teacher-avatar[data-gesture=encourage] .teacher-hearts i{animation:none!important;opacity:1;transform:translateY(-15px)}.teacher-avatar[data-state=thinking] .hair{animation:none!important;opacity:1}}

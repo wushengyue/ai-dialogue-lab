@@ -85,7 +85,7 @@ try {
     assert.ok(sizes.scrollHeight <= height + 1 && sizes.scrollWidth <= width + 1, JSON.stringify(sizes));
     assert.ok(sizes.controlsBottom <= height, JSON.stringify(sizes));
     assert.ok(sizes.avatarWidth < 90, JSON.stringify(sizes));
-    assert.ok(await evaluate(`(()=>{const a=document.getElementById('teacherAvatar').getBoundingClientRect(),t=document.getElementById('boardTopic').getBoundingClientRect(),b=document.getElementById('blackboard').getBoundingClientRect();return a.left>=b.left&&a.right<=t.left&&Math.abs((a.top+a.height/2)-(t.top+t.height/2))<2&&a.bottom<=b.bottom})()`),'Teacher must sit just before the board topic');
+    assert.ok(await evaluate(`(()=>{const a=document.getElementById('teacherAvatar').getBoundingClientRect(),t=document.getElementById('boardTopic').getBoundingClientRect(),b=document.getElementById('blackboard').getBoundingClientRect();return a.left>=b.left&&a.right<=t.left&&(t.top+t.height/2)-(a.top+a.height/2)>1&&(t.top+t.height/2)-(a.top+a.height/2)<10&&a.bottom<=b.bottom})()`),'Teacher must sit just before the board topic');
     records.push(sizes);
   }
   await call('Emulation.setDeviceMetricsOverride', {width:1280,height:800,deviceScaleFactor:1,mobile:false}); await sleep(250);
@@ -180,7 +180,7 @@ try {
     console.log('Staged board and sentence checkpoint verified, with fixed font, scroll and page review.');
     await click('interruptButton');
     await evaluate(`(async()=>{const b=await import('/live-board.mjs');b.applyBoardOps([{action:'new_page',text:'Rubric：评分标准与阅卷老师'},...['荧光笔','下划线','圈选','方框'].map((s,i)=>({action:'add',id:'pen-'+i,text:s+'强调关键依据，其余文字保持清爽。'})),...['marker','underline','circle','box'].map((style,i)=>({action:'highlight',id:'pen-'+i,phrase:['荧光笔','下划线','圈选','方框'][i],intent:'emphasis',style}))]);document.getElementById('boardBody').scrollTop=0;document.getElementById('teacherAvatar').dataset.state='speaking';b.applyBoardOps([{action:'gesture',name:'encourage'}]);})()`);
-    const pen=await evaluate(`({styles:[...document.querySelectorAll('#liveRows mark')].map(e=>e.dataset.markStyle),heart:getComputedStyle(document.querySelector('.hair-heart')).display,titleSize:getComputedStyle(document.getElementById('boardTopic')).fontSize,avatarParent:document.getElementById('teacherAvatar').parentElement.className})`);
+    const pen=await evaluate(`({styles:[...document.querySelectorAll('#liveRows mark')].map(e=>e.dataset.markStyle),heart:getComputedStyle(document.querySelector('.teacher-hearts')).display,titleSize:getComputedStyle(document.getElementById('boardTopic')).fontSize,avatarParent:document.getElementById('teacherAvatar').parentElement.className})`);
     assert.deepEqual(pen.styles,['marker','underline','circle','box']);assert.equal(pen.heart,'block');assert.equal(pen.titleSize,'28px');assert.equal(pen.avatarParent,'board-topic');
     await sleep(600);
     screenshot=await call('Page.captureScreenshot');await fs.writeFile('data/classroom-teacher-caption.png',Buffer.from(screenshot.data,'base64'));
@@ -192,7 +192,8 @@ try {
     await evaluate(`document.getElementById('teacherAvatar').dataset.state='thinking'`);
     assert.equal(await evaluate(`getComputedStyle(document.querySelector('.hair-one')).animationName`),'hair-loading');
     assert.equal(await evaluate(`getComputedStyle(document.querySelector('.avatar-character')).animationName`),'none');
-    records.push({fixture:true,pen,teacher_before_title:true,stable_words:true,no_page_animation:true,hair_loading:true,follow_current_content:true});
+    records.push({fixture:true,pen,teacher_before_title:true,stable_words:true,no_page_animation:true,hair_loading:true,loading_colors:await evaluate(`[...document.querySelectorAll('.hair')].map(e=>getComputedStyle(e).stroke)`),follow_current_content:true});
+    screenshot=await call('Page.captureScreenshot');await fs.writeFile('data/classroom-colored-loading.png',Buffer.from(screenshot.data,'base64'));
     await evaluate(`(async()=>{const b=await import('/live-board.mjs');b.applyBoardOps([{action:'layout',columns:3,rows:1},{action:'node',id:'standard',text:'评分标准',col:0},{action:'node',id:'judge',text:'裁判模型',col:1},{action:'node',id:'old-node',text:'旧例子',col:2},{action:'edge',id:'use',from:'standard',to:'judge',text:'依据'},{action:'edge',id:'old-edge',from:'judge',to:'old-node'}]);b.applyBoardOps([{action:'clear',keep:['pen-0','standard','judge']},{action:'add',id:'pen-0',text:'Rubric 定义具体标准；裁判模型执行判断。'},{action:'title',text:'评分标准与裁判的分工'},{action:'question',text:''}]);})()`);
     assert.equal(await evaluate(`document.querySelectorAll('#liveRows [data-block-id]').length`),1);
     assert.equal(await evaluate(`document.querySelectorAll('#liveDiagram [data-node-id]').length`),2);

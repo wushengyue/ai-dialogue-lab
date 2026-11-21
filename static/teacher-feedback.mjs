@@ -28,6 +28,8 @@ export function clearTeacherGesture() {
 window.addEventListener('teacher-gesture', event => {
   if (event.detail?.name !== 'encourage' || $('teacherAvatar').dataset.state === 'listening') return;
   clearTeacherGesture();
+  // Restart the three bubbles even when two praise steps arrive close together.
+  void $('teacherAvatar').offsetWidth;
   $('teacherAvatar').dataset.gesture = 'encourage';
   gestureTimer = setTimeout(clearTeacherGesture, 2800);
 });

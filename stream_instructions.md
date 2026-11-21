@@ -20,7 +20,7 @@
 - remove：id 删除指定内容。
 - clear：清理当前页的文字和图示；keep 是要保留的已有文字或节点 id 数组，例如 {"action":"clear","keep":["core-rule"]}。省略 keep 表示清空当前页正文。只保留两端节点仍存在的连线，保留当前页标题和页码，不删除历史页。问题另用 question 空文本清除；当前正在回答的学生关键问题仍保留。
 - highlight：id 指向已有文字或图节点，phrase 指定局部关键字；style 从 marker（荧光笔，默认）、underline（下划线）、circle（圈选）、box（方框）选择。intent=reference 为当前指读、下步解除，inquiry 为正在提问，emphasis 为持久强调。优先精确到短词，不整页涂色，不给同一处堆多种标记。
-- gesture：name=encourage，只在具体肯定学生回答的正确依据时使用，让一根头发变成小爱心；随对应话术触发，不提前鼓励，不凭空夸奖。倾听时的波浪头发由真实收音状态驱动，不需要模型请求。
+- gesture：name=encourage，只在具体肯定学生回答的正确依据时使用，让三颗小爱心依次向上冒泡；随对应话术触发，不提前鼓励，不凭空夸奖。倾听时的波浪头发由真实收音状态驱动，不需要模型请求。
 - layout：columns 为结构图总列数（2—5），rows 为总行数（1—3）；先确定图的位置，后面再按讲话逐个加节点，布局不跳动。
 - node：id、text、col、row 创建结构图节点；col/row 从0开始，不能超出 layout。
 - edge：id、from、to、text 连接已经出现的节点，from/to 是节点id；text 是短标签。
