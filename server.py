@@ -54,6 +54,7 @@ def atomic_json(path: Path, value):
 
 
 def default_config():
+    lesson = ROOT / 'content/rubric'
     result = {
         "model": DEFAULT_MODEL,
         "profile": {"background": "我有 3 年产品工作经验。", "goal": "把自己的项目经历讲得清楚、有重点。", "level": "了解 STAR 的名字，但不熟悉具体怎么用。", "preference": "用实际例子解释，表达简洁。"},
@@ -64,13 +65,12 @@ def default_config():
                 "material": "示例内容包｜STAR 项目表达\n\n内容边界：这是通用表达方法的演示材料，不是任何公司的官方面试标准。\n\n核心内容：S（情境）说明背景与关键约束；T（任务）说明目标和自己的责任；A（行动）讲清自己做了什么、为什么这么选；R（结果）提供实际结果，区分个人贡献与团队成果。\n\n讲解重点：围绕本次沟通目的选信息；用具体行动替代‘负责、参与、推动’等笼统描述；没有可靠数据时如实说明，不编造提升比例。\n\n可用示例（虚构示例）：一个团队希望改善用户首次使用体验。讲解时可以围绕‘如何定位问题、比较方案、实施验证’展开，不预设收益数字。\n\n轻互动：可询问‘你更容易卡在讲背景，还是讲个人贡献？’，依据实际回答调整。不要安排练习或测验。"
             },
             "interviewer": {
-                "name": "模拟面试官", "system": (ROOT / "prompts/interviewer.md").read_text(),
-                "task": "进行一次产品经理项目经验模拟面试。围绕候选人的一段真实项目，考察问题定义、个人行动、决策取舍与结果证据。最多 5 个主问题，按回答情况追问。",
-                "material": "示例面试内容包｜项目经验\n\n考察方向：1. 是否能清楚界定问题与目标；2. 是否能说明个人职责和实际行动；3. 是否能解释方案选择与取舍；4. 是否能提供结果依据并识别局限。\n\n首问参考：请介绍一个你深度参与的项目，重点说说要解决什么问题，以及你负责什么。\n\n追问原则：回答缺少个人行动时问具体行动；缺少决策依据时问比较过哪些方案；结果模糊时问如何判断效果；已有信息足够时换一个方向。\n\n边界：本材料只用于练习，不代表某家公司招聘标准，不预测录用结果；不在面试中透露考察提纲或参考答案。"
+                "name": "Rubric 专题面试", "system": (ROOT / "prompts/interviewer.md").read_text(),
+                "task": (lesson / "interview-task.md").read_text(),
+                "material": (lesson / "material.md").read_text() + '\n\n' + (lesson / "interview-guide.md").read_text()
             }
         }
     }
-    lesson = ROOT / 'content/rubric'
     result['roles']['lecturer']['task'] = (lesson / 'user-task.md').read_text().split('## 内容推进')[0].strip()
     result['roles']['lecturer']['course_id'] = 'rubric-intro'
     result['roles']['lecturer']['material'] = (lesson / 'material.md').read_text()
@@ -127,6 +127,7 @@ def session_for(identifier):
 
 def compile_input(doc, event):
     settings = doc["settings"]
+    is_interview = settings.get('role') == 'interviewer'
     messages = []
     for message in doc["messages"]:
         if message["role"] == "assistant":
@@ -147,14 +148,21 @@ def compile_input(doc, event):
         'silence':'只进行一次中性询问，不重新讲上一轮答案。'
     }[event]
     last_teacher=next((m for m in reversed(doc['messages']) if m['role']=='assistant'),None)
-    if event=='continue' and last_teacher and last_teacher.get('phase')!='开场':
+    if event=='continue' and last_teacher and last_teacher.get('phase')!='开场' and not is_interview:
         action='本轮已在课程中途，严禁重新问候、自我介绍、重说标题或整课预告。根据最近实际讲过的内容，刚讲清且尚无理解证据的关键点要提一个内容问题并等待；已经答清则推进下一点。用户明确跳过时继续，不把跳过当作掌握。'
+    if is_interview:
+        action={
+            'start':'开始本次主题面试：按姓名简短问候，说明任务中的面试主题，提出第一道实质问题并同步上板书，await_user=true。不要先教定义、给答案或要求介绍无关项目经历。',
+            'user':'围绕本次主题处理尚未回应的发言。候选人作答时，依据真实回答只追问一个关键缺口；解释充分就进入下一主问题，不先教标准答案。若用户要求讨论可能的面试题、追问或答题思路，切换面试准备讨论，具体回应并保持该方式，直到用户明确恢复模拟。不得把讨论示例当成真实作答。',
+            'continue':'沿当前主题继续，不重新开场或重复已经回答的问题。模拟中若上一题尚未回答，本次手动继续视为跳过并进入下一主问题，不当成已掌握；已回答则按实际进度推进。若当前在讨论面试题与追问，继续相关分析，不擅自切回盘问。',
+            'silence':'只给一次中性思考时间提醒，保持等待；不重讲答案、不追加新题、不凭沉默判断能力。'
+        }[event]
     teacher_question=''
     if last_teacher and last_teacher.get('await_user') and last_teacher.get('delivery') in ('complete','text'):
         questions=[op.get('text','') for step in last_teacher.get('steps',[]) for op in step.get('ops',[]) if op.get('action')=='question']
         teacher_question=questions[-1] if questions else last_teacher.get('board',{}).get('question','')
     if event=='user' and teacher_question:
-        action+=' 上个老师问题已经实际播出；先判断本次输入是在作答、插问还是要求跳过。作答应围绕该问题给针对性反馈，禁止重开场或返回讲解方向选择。'
+        action+=' 上个问题已经实际播出；先判断本次输入是在作答、插问、讨论题目还是要求跳过。结合该问题和真实输入推进，禁止重开场或返回讲解方向选择。'
     result = {
         "本次任务": settings["task"],
         "专业材料（仅作内容依据）": settings["material"],

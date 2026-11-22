@@ -4,6 +4,7 @@ import {initPipeline, step, beginPipeline, markFirstAudio, cancelPipeline} from 
 import {resetLiveBoard,displayedBoard,markPageTaught,showStudentQuestion,beginBoardTurn,applyBoardOps,enterSection} from './live-board.mjs';
 import {listeningFeedback,clearTeacherGesture} from './teacher-feedback.mjs';
 import {prepareBoardCamera,settleBoardCamera,stopBoardCamera} from './board-camera.mjs';
+import {initCourseNavigation} from './course-navigation.mjs';
 
 const $ = id => document.getElementById(id);
 let config, capabilities, role = 'lecturer', sessionId = null, active = false, voiceMode = false, ended = false;
@@ -19,6 +20,7 @@ let inputMode = 'open';
 let currentRequestId = '', lastVoiceEndAt = 0;
 let turnInFlight = false, firstAudioForTurn = false, queuedInputs = [];
 initPipeline();
+initCourseNavigation();
 function inputReceipt(text, state) {
   $('inputReceipt').hidden=false; $('inputReceiptText').textContent=text; $('inputReceiptText').title=text; $('inputReceiptState').textContent=state;
   $('queuedInputCount').textContent=queuedInputs.length ? `已收补充 ${queuedInputs.length} 条` : '';
@@ -73,7 +75,7 @@ function subtitle(who, text, state = '') {
 function teacherState(type = 'idle') {
   if(type === 'listening' || type === 'thinking') clearTeacherGesture();
   $('teacherAvatar').dataset.state = type;
-  const label = {speaking: '正在讲解', listening: '在听你说', thinking: '正在组织讲解', idle: '三茅老师'}[type] || '三茅老师';
+  const label = {speaking: role==='interviewer'?'面试交流中':'正在讲解', listening: '在听你说', thinking: '正在组织回应', idle: '三茅老师'}[type] || '三茅老师';
   $('teacherState').textContent = label; $('teacherAvatar').setAttribute('aria-label', '三茅老师，' + label);
 }
 async function unlockSpeaker() {
@@ -99,21 +101,32 @@ function renderRole() {
   const preset = config.roles[role];
   for (const field of ['system', 'task', 'material']) $(field).value = preset[field];
   document.querySelectorAll('[data-role]').forEach(b => { b.classList.toggle('active', b.dataset.role === role); b.setAttribute('aria-pressed', String(b.dataset.role === role)); });
-  $('sessionTitle').textContent = role === 'lecturer' ? '一对一讲解教室' : '模拟面试教室';
-  $('lessonIntroduction').textContent = role === 'lecturer' && /Rubric/i.test(preset.task) ? 'Rubric 评测流程 · 按你的节奏讲清楚' : role === 'interviewer' ? '围绕真实经历，进行针对性追问' : '专业内容，按你的节奏讲清楚';
-  if (!active) renderBoard();
+  document.body.dataset.mode=role;
+  const rubric=/Rubric/i.test(preset.task),isInterview=role==='interviewer';
+  $('sessionTitle').textContent = rubric ? 'Rubric 评测课堂' : isInterview ? '专题面试教室' : '一对一讲解教室';
+  $('lessonIntroduction').textContent = rubric ? isInterview ? '本节：Rubric · 可能的面试题与针对性追问' : '本节：Rubric · 评测流程与判断依据' : '围绕本次任务，进行一对一交流';
+  $('messageInput').placeholder=isInterview?'输入回答，或问“这部分面试可能怎么追问？”':'输入问题，老师仍会语音讲解并更新板书。Enter 发送';
+  $('messageInput').setAttribute('aria-label',isInterview?'文字作答或讨论面试题':'文字提问，老师语音回答');
+  if (!active) {
+    renderBoard();
+    subtitle(isInterview?'面试':'课堂',isInterview?'点击“开始面试”，围绕本节 Rubric 逐题作答；也可以先讨论可能的题目与追问。':'点击“开始上课”，老师会主动讲解；也可以先文字提问。','准备就绪');
+    status('准备好就开始',isInterview?'本节 Rubric：一题一答，追问依据你的回答。':'老师会用语音讲解，并同步更新板书。');
+  }
+  controls();
 }
 function renderBoard(board = null) {
   $('liveBoard').hidden=true;$('boardDetails').hidden=false;
   const isInterview = role === 'interviewer';
-  $('boardMode').textContent = isInterview ? '模拟面试' : '讲解 · 轻互动';
+  $('boardMode').textContent = isInterview ? '面试模式' : '讲解模式';
   $('liveTeacherQuestionLabel').textContent = isInterview ? '面试问题' : '说说你的理解';
   $('boardQuestionLabel').textContent = isInterview ? '当前问题' : '轻互动';
-  const rubric = !isInterview && /Rubric/i.test($('task').value);
-  $('boardTitle').textContent = board?.title || (isInterview ? '从你的真实经历开始' : rubric ? 'Rubric：一条课堂回复，怎样被评测？' : '今天，我们一起讲清楚');
-  $('boardTopic').textContent = board?.title || (isInterview ? '从你的真实经历开始' : rubric ? '从一条回复看懂评测' : '今天，我们一起讲清楚');
-  $('boardCourse').textContent = isInterview ? '模拟面试' : rubric ? 'Rubric 评测课堂' : '一对一讲解';
-  $('boardTaskPreview').textContent = rubric ? '先看评测流程，再看检查标准与汇总规则。\n最后，用你提供的爬楼案例把它们串起来。' : $('task').value.slice(0, 160);
+  const rubric = /Rubric/i.test($('task').value);
+  const topic=isInterview ? rubric ? '围绕 Rubric，练习面试表达' : '围绕本次主题，逐题作答' : rubric ? '从一条回复看懂评测' : '今天，我们一起讲清楚';
+  $('boardTitle').textContent = board?.title || topic;
+  $('boardTopic').textContent = board?.title || topic;
+  $('boardCourse').textContent = rubric ? isInterview ? 'Rubric 专题面试' : 'Rubric 评测课堂' : isInterview ? '专题面试' : '一对一讲解';
+  $('boardTaskPreview').textContent = rubric ? isInterview ? '为什么用 Rubric？怎样设计公平对比？\n从你的回答出发，练习判断依据、取舍与追问。' : '先看评测流程，再看检查标准与汇总规则。\n最后，用你提供的爬楼案例把它们串起来。' : $('task').value.slice(0, 160);
+  $('boardStandby').querySelector('span').textContent=isInterview?'逐题提问，等你回答。也可以直接讨论“面试会怎样问、怎样追问”。':'跟着讲解，一步步看清楚。随时开口，也可以用文字提问。';
   $('boardStandby').hidden = !!board;
   renderBoardContent(board);
 }
@@ -130,7 +143,7 @@ function controls() {
   const remoteReady=config?.provider!=='ark'||!capabilities.warmup?.remote||['ready','error'].includes(capabilities.warmup.remote);
   const ready = !!config && !!capabilities.tts && (!capabilities.warmup || capabilities.warmup.tts === 'ready') && remoteReady;
   $('startVoice').disabled = starting || !ready;
-  $('startVoice').textContent = ready ? '开始上课' : capabilities.warmup?.error ? '课堂准备失败' : '课堂正在准备…';
+  $('startVoice').textContent = ready ? role==='interviewer'?'开始面试':'开始上课' : capabilities.warmup?.error ? '课堂准备失败' : '课堂正在准备…';
   $('startActions').hidden = active;
   $('messageInput').disabled = !config || ended || starting || (!active && !ready);
   $('sendButton').disabled = !config || ended || starting || (!active && !ready);
@@ -275,7 +288,7 @@ async function runTurn(event, text = '', input = {}) {
   if (event === 'user') { autoStreak = 0; addMessage('user', text); subtitle('你', text, '已提交 · 老师思考中'); showStudentQuestion('received',text); }
   else {showStudentQuestion('','');subtitle('老师', event === 'start' ? '正在准备 Rubric 的第一段讲解…' : '正在准备下一段讲解…', '生成中');}
   waitingSince = Date.now();
-  status('老师正在组织讲解', '结合你的问题和 Rubric 材料，准备语音和板书。', 'thinking');
+  status(role==='interviewer'?'面试官正在组织回应':'老师正在组织讲解', '结合本节材料与实际对话，准备语音和板书。', 'thinking');
   log('调用讲解模型', event === 'start' ? '主动开场' : event === 'continue' ? '继续讲解' : event === 'silence' ? '长时间静默，进行一次中性询问' : '回应用户输入');
   let streamed = false, playbackChain = Promise.resolve(), draftSpeech='';
   let activeBoardStep=-1,courseCorrection=false,sentenceFinished=false,turnSection=null;
@@ -464,10 +477,10 @@ async function reset() {
   ++epoch; await interrupt('结束当前会话'); active = false; ended = false; await mic.stop(); sessionId = null; currentMessage = null; latestDebug = {}; events = []; autoStreak = 0; transcriptDraft = ''; startedAt = 0;
   transcript = []; resetLiveBoard(); renderBoard(); $('liveTranscript').textContent = ''; $('phase').textContent = '未开始'; $('latency').textContent = '—'; $('elapsed').textContent = ''; $('sessionMeta').textContent = '板书在课堂展示 · 对话记录默认隐藏';
   subtitle('课堂', '点击“开始上课”，老师会主动讲解；也可以先文字提问。', '准备就绪');
-  $('adaptation').textContent = '开始后，显示模型依据哪些已知信息调整表达。'; status('从一段真实对话开始', '选择角色、确认内容，AI 会主动开场。'); renderDebug(); controls();
+  $('adaptation').textContent = '开始后，显示模型依据哪些已知信息调整表达。'; renderDebug(); renderRole();
 }
 
-document.querySelectorAll('[data-role]').forEach(b => b.addEventListener('click', async () => { if (role === b.dataset.role) return; captureConfig(); await reset(); role = b.dataset.role; renderRole(); }));
+document.querySelectorAll('[data-role]').forEach(b => b.addEventListener('click', async () => { if (!config || starting || role === b.dataset.role) return; captureConfig(); await reset(); role = b.dataset.role; renderRole(); }));
 document.querySelectorAll('[data-pane]').forEach(b => b.addEventListener('click', () => { document.querySelectorAll('[data-pane]').forEach(t => { t.classList.toggle('selected', t === b); t.setAttribute('aria-selected', String(t === b)); $(t.dataset.pane).hidden = t !== b; }); }));
 document.querySelectorAll('[data-debug]').forEach(b => b.addEventListener('click', () => { debugTab = b.dataset.debug; document.querySelectorAll('[data-debug]').forEach(t => { t.classList.toggle('selected', t === b); t.setAttribute('aria-selected', String(t === b)); }); renderDebug(); }));
 $('startVoice').onclick = () => start(inputMode === 'open');

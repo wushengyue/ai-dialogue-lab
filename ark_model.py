@@ -26,7 +26,7 @@ def request_body(model,system,user_input,stream=True,max_tokens=2000):
     event=runtime.get('事件')
     turn_rule=''
     if event in ('user','continue','silence'):
-        turn_rule='\n本轮不是主动开课，不得重新问候、自我介绍、复述课题或整课预告。直接按本轮行动处理学生输入或检查已讲关键内容。'
+        turn_rule='\n本轮不是主动开课，不得重新问候、自我介绍、复述课题或整课预告。按当前角色和本轮行动处理输入；面试回答不套用讲师的先讲后检查流程。'
     elif event=='start' and runtime.get('角色','lecturer')=='lecturer':
         turn_rule='\n本轮为主动开课：使用学生姓名问候，自我介绍一次“我是三茅老师，一个爱穿格子衫的资深 AI 从业者”，完整说出课程标题，再依次预告几个方面，按顺序开始；await_user=false。'
     elif event=='start':

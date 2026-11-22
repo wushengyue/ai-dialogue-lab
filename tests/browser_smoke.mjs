@@ -78,6 +78,12 @@ try {
   await call('Emulation.setDeviceMetricsOverride', {width:1280,height:800,deviceScaleFactor:1,mobile:false});
   await call('Page.navigate', {url:'http://127.0.0.1:8765/?qa=classroom'});
   await until('document.getElementById("connection")?.classList.contains("ready")');
+  assert.deepEqual(await evaluate(`[...document.querySelectorAll('.course-name')].map(e=>e.textContent)`),['整体架构','Rubric','板书','学习系统','实时教学系统','教具','自动化内容生产']);
+  assert.equal(await evaluate(`document.querySelector('.course-item[aria-current="page"]').dataset.course`),'rubric');
+  assert.equal(await evaluate(`getComputedStyle(document.getElementById('courseNav')).backgroundColor`),'rgba(0, 0, 0, 0)');
+  if(await evaluate(`document.getElementById('courseToggle').getAttribute('aria-expanded')==='false'`))await click('courseToggle');
+  await click('courseToggle');assert.ok(await evaluate(`document.getElementById('courseList').hidden`));
+  await click('courseToggle');assert.ok(await evaluate(`!document.getElementById('courseList').hidden`));
   for (const [width,height] of [[1280,800],[1366,768],[1024,768],[800,600],[390,844]]) {
     await call('Emulation.setDeviceMetricsOverride', {width,height,deviceScaleFactor:1,mobile:false}); await sleep(250);
     const sizes = await evaluate(`(()=>{const r=document.getElementById('blackboard').getBoundingClientRect(),a=document.getElementById('teacherAvatar').getBoundingClientRect(),c=document.querySelector('.composer-area').getBoundingClientRect();return {width:innerWidth,height:innerHeight,scrollWidth:document.documentElement.scrollWidth,scrollHeight:document.documentElement.scrollHeight,board:{x:r.x,y:r.y,width:r.width,height:r.height},avatarWidth:a.width,controlsBottom:c.bottom}})()`);
@@ -89,8 +95,36 @@ try {
     records.push(sizes);
   }
   await call('Emulation.setDeviceMetricsOverride', {width:1280,height:800,deviceScaleFactor:1,mobile:false}); await sleep(250);
+  if(await evaluate(`document.getElementById('courseToggle').getAttribute('aria-expanded')==='false'`))await click('courseToggle');
+  await sleep(250);
   let screenshot = await call('Page.captureScreenshot'); await fs.writeFile('data/classroom-ready.png', Buffer.from(screenshot.data,'base64'));
   console.log('Layout verified at five viewport sizes, board 16:9, avatar under 90px.');
+  if(process.argv.includes('--interview')){
+    await click('interviewerRole');await until(`document.getElementById('boardMode').textContent==='面试模式'`);
+    assert.equal(await evaluate(`document.getElementById('interviewerRole').getAttribute('aria-pressed')`),'true');
+    assert.equal(await evaluate(`document.getElementById('boardCourse').textContent`),'Rubric 专题面试');
+    assert.ok(await evaluate(`document.getElementById('lessonIntroduction').textContent.includes('Rubric')`));
+    await until(`document.getElementById('startVoice').textContent==='开始面试'&&!document.getElementById('startVoice').disabled`,60000);
+    await click('autoAdvance');await click('textToggle');await click('startVoice');
+    await until(`document.getElementById('debugContent').textContent.includes('播报完成')`,90000);
+    const firstQuestion=await evaluate(`document.getElementById('liveTeacherQuestionText').textContent`);
+    assert.ok(/Rubric/.test(firstQuestion),firstQuestion);
+    assert.ok(!/介绍.*项目|真实经历/.test(firstQuestion),firstQuestion);
+    await evaluate(`document.getElementById('messageInput').value='Rubric 把讲得好拆成可以逐项判断的标准，裁判结合上下文判定并给理由，能够定位哪一项变差，而不只是整体选优。'`);
+    await click('sendButton');
+    await until(`(document.getElementById('debugContent').textContent.match(/播报完成/g)||[]).length>=2`,90000);
+    const actual=await evaluate(`(async()=>{const prefix=document.getElementById('sessionMeta').textContent.split(' · ')[1],all=await(await fetch('/api/sessions')).json(),id=all.find(s=>s.id.startsWith(prefix)).id;return(await fetch('/api/sessions/'+id)).json()})()`);
+    const answers=actual.messages.filter(m=>m.role==='assistant');
+    assert.equal(actual.settings.role,'interviewer');assert.equal(actual.settings.provider,'ark');
+    for(const answer of answers){assert.equal(answer.await_user,true);assert.ok(answer.steps.some(s=>s.ops.some(op=>op.action==='question'&&op.text)));}
+    const followup=await evaluate(`document.getElementById('liveTeacherQuestionText').textContent`);assert.ok(followup&&followup!==firstQuestion);
+    screenshot=await call('Page.captureScreenshot');await fs.writeFile('data/classroom-interview.png',Buffer.from(screenshot.data,'base64'));
+    records.push({rubric_interview:true,firstQuestion,followup,answers:answers.map(m=>m.content),events:actual.events.filter(e=>['first_audio','model_complete'].includes(e.kind))});
+    console.log(JSON.stringify({rubric_interview:true,firstQuestion,followup}));
+    await click('lecturerRole');await until(`document.getElementById('boardMode').textContent==='讲解模式'`);
+    assert.equal(await evaluate(`document.getElementById('boardCourse').textContent`),'Rubric 评测课堂');
+    assert.equal(await evaluate(`document.querySelector('.course-item[aria-current="page"]').dataset.course`),'rubric');
+  }
   if (process.argv.includes('--queue')) {
     await click('autoAdvance'); await click('textToggle');
     await evaluate('document.getElementById("messageInput").value="请介绍 Rubric。"'); await click('sendButton');
@@ -166,9 +200,13 @@ try {
     assert.equal(await evaluate('getComputedStyle(document.querySelector(".live-block")).fontSize'),font);
     assert.ok(await evaluate('document.getElementById("boardBody").scrollHeight>document.getElementById("boardBody").clientHeight'));
     await sleep(700);
+    assert.ok(await evaluate(`(()=>{const b=document.getElementById('boardBody');return Math.abs(b.scrollHeight-b.clientHeight-b.scrollTop)<2})()`),'New content follows the bottom');
     await evaluate(`import('/live-board.mjs').then(b=>b.applyBoardOps([{action:'highlight',id:'first',intent:'reference'}]))`);
     await sleep(700);
     assert.ok(await evaluate(`(()=>{const a=document.querySelector('[data-block-id=first]').getBoundingClientRect(),b=document.getElementById('boardBody').getBoundingClientRect();return a.top>=b.top-2&&a.bottom<=b.bottom+2})()`),'Revisiting a point must scroll back to it');
+    await evaluate(`import('/live-board.mjs').then(b=>b.applyBoardOps([{action:'add',id:'resumed-tail',text:'回讲之后，新的讲解继续接在末尾。'},{action:'highlight',id:'resumed-tail',intent:'emphasis'}]))`);
+    await sleep(700);
+    assert.ok(await evaluate(`(()=>{const b=document.getElementById('boardBody');return Math.abs(b.scrollHeight-b.clientHeight-b.scrollTop)<2})()`),'Resuming new content returns to the bottom');
     await evaluate(`(()=>{const b=document.getElementById('boardBody');b.scrollTo({top:b.scrollHeight,behavior:'instant'});b.dispatchEvent(new WheelEvent('wheel'));})()`);
     await evaluate(`import('/live-board.mjs').then(b=>b.applyBoardOps([{action:'highlight',id:'first',intent:'reference'}]))`);await sleep(400);
     assert.ok(await evaluate(`document.getElementById('boardBody').scrollTop>100`),'Manual review must not be overridden');
@@ -259,5 +297,5 @@ try {
     await click('interruptButton');await until('document.getElementById("statusTitle").textContent==="课堂已暂停"');
   }
   assert.deepEqual(errors, []);
-  await fs.writeFile(process.argv.includes('--english') ? 'data/browser-english-verification.json' : process.argv.includes('--live') ? 'data/browser-live-verification.json' : process.argv.includes('--voice') ? 'data/browser-voice-verification.json' : process.argv.includes('--staged') ? 'data/browser-staged-verification.json' : 'data/browser-verification.json', JSON.stringify(records,null,2));
+  await fs.writeFile(process.argv.includes('--interview') ? 'data/browser-interview-verification.json' : process.argv.includes('--english') ? 'data/browser-english-verification.json' : process.argv.includes('--live') ? 'data/browser-live-verification.json' : process.argv.includes('--voice') ? 'data/browser-voice-verification.json' : process.argv.includes('--staged') ? 'data/browser-staged-verification.json' : 'data/browser-verification.json', JSON.stringify(records,null,2));
 } finally { ws.close(); await fetch('http://127.0.0.1:9227/json/close/'+tab.id); }

@@ -82,17 +82,20 @@ function drawDiagram(p,added){
   }host.append(root);
 }
 function followFocus(p){
-  if(!following||view!==pages.length-1||!p.focus)return;
-  const f=p.focus,body=$('boardBody');
+  if(!following||view!==pages.length-1)return;
+  const f=p.focus||{kind:'bottom'},body=$('boardBody');
+  const behavior=matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth';
+  const bottom=()=>body.scrollTo({top:body.scrollHeight,behavior});
+  if(f.kind==='bottom'){bottom();return;}
   const target=f.kind==='question'?$('liveTeacherQuestion'):f.kind==='student'?$('studentQuestionWrap'):
     [...$(f.kind==='node'?'liveDiagram':'liveRows').querySelectorAll(f.kind==='node'?'[data-node-id]':'[data-block-id]')].find(el=>(el.dataset.nodeId||el.dataset.blockId)===f.id);
-  if(!target||target.hidden||!target.getClientRects().length)return;
+  if(!target||target.hidden||!target.getClientRects().length){bottom();return;}
   const area=body.getBoundingClientRect(),rect=target.getBoundingClientRect(),scale=area.width/body.offsetWidth||1,pad=16*scale;
   let top=body.scrollTop;
   if(rect.top<area.top+pad||rect.height>area.height-pad*2)top+=(rect.top-area.top-pad)/scale;
   else if(rect.bottom>area.bottom-pad)top+=(rect.bottom-area.bottom+pad)/scale;
   else return;
-  body.scrollTo({top:Math.max(0,top),behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
+  body.scrollTo({top:Math.max(0,top),behavior});
 }
 function paint(added=new Set(),force=false){
   controls();if(view<0)return;const p=pages[view];$('boardTitle').textContent=p.title;$('boardTopic').textContent=p.title;
@@ -111,7 +114,7 @@ function paint(added=new Set(),force=false){
   followFocus(p);
 }
 export function applyBoardOps(ops){
-  beginBoardTurn();let p=ensure(),changedPage=false,cleared=false,focusPriority=0;const added=new Set();
+  beginBoardTurn();let p=ensure(),changedPage=false,focusPriority=0;const added=new Set();
   const focus=(kind,id,priority)=>{if(priority>=focusPriority){p.focus={kind,id};focusPriority=priority;}};
   // A reference follows the current spoken step; persistent emphasis remains.
   for(const b of p.blocks){if(b.intent==='reference')b.intent='';b.highlights=(b.highlights||[]).filter(h=>h.intent!=='reference');}
@@ -127,32 +130,36 @@ export function applyBoardOps(ops){
       const keep=new Set(Array.isArray(op.keep)?op.keep:[]);
       p.blocks=p.blocks.filter(b=>keep.has(b.id));p.nodes=p.nodes.filter(n=>keep.has(n.id));
       const nodes=new Set(p.nodes.map(n=>n.id));p.edges=p.edges.filter(e=>nodes.has(e.from)&&nodes.has(e.to));
-      p.focus=null;focusPriority=0;
-      cleared=true;
+      p.focus={kind:'bottom'};focusPriority=0;
     }else if(op.action==='title')p.title=text;
     else if(op.action==='add'&&id){
       let block=p.blocks.find(b=>b.id===id),anchor=p.blocks.find(b=>b.id===(op.rightOf||op.belowOf));
       if(block){block.text=text;block.role=op.role||block.role;}
       else {const lastRow=p.blocks.at(-1)?.row;block={id,text,role:op.role||'knowledge',row:op.rightOf&&anchor?.row===lastRow?lastRow:id,highlights:[]};
         p.blocks.push(block);added.add(id);}
-      focus('block',id,1);
+      focus('bottom','',1);
     }else if(op.action==='remove'){p.blocks=p.blocks.filter(b=>b.id!==id);p.nodes=p.nodes.filter(n=>n.id!==id);p.edges=p.edges.filter(e=>e.id!==id&&e.from!==id&&e.to!==id);}
     else if(op.action==='highlight'){
       const block=p.blocks.find(b=>b.id===id),node=p.nodes.find(n=>n.id===id),intent=['reference','inquiry','emphasis'].includes(op.intent)?op.intent:'reference';
       const style=['marker','underline','circle','box'].includes(op.style)?op.style:'marker';
       if(block){const phrase=String(op.phrase||block.text);block.highlights=(block.highlights||[]).filter(h=>h.phrase!==phrase);block.highlights.push({phrase,intent,style});}
       if(node){node.intent=intent;node.markStyle=style;}
-      if(block||node)focus(node?'node':'block',id,intent==='emphasis'?2:3);
+      // New writing follows the bottom. Only an explicit reference to older
+      // content moves the viewport back up; styling new text does not.
+      if(block||node){
+        if(added.has(id))focus('bottom','',2);
+        else focus(node?'node':'block',id,3);
+      }
     }else if(op.action==='gesture' && op.name==='encourage'){
       window.dispatchEvent(new CustomEvent('teacher-gesture',{detail:{name:'encourage'}}));
     }else if(op.action==='layout')p.layout={columns:Number(op.columns)||3,rows:Number(op.rows)||2};
-    else if(op.action==='node'&&id){const node={id,text,col:Math.max(0,Math.min(p.layout.columns-1,Number(op.col)||0)),row:Math.max(0,Math.min(p.layout.rows-1,Number(op.row)||0))};const previous=p.nodes.find(n=>n.id===id);if(previous)Object.assign(previous,node);else{p.nodes.push(node);added.add(id);}focus('node',id,1);}
-    else if(op.action==='edge'&&id){const edge={id,from:String(op.from||''),to:String(op.to||''),text};const old=p.edges.find(e=>e.id===id);if(old)Object.assign(old,edge);else p.edges.push(edge);}
-    else if(op.action==='question'){p.question=text;if(text)focus('question','',4);}
-    else if(op.action==='student_question'&&!['queued','listening','recognizing'].includes(questionMode)){showStudentQuestion('answering',text,true);if(text)focus('student','',4);}
+    else if(op.action==='node'&&id){const node={id,text,col:Math.max(0,Math.min(p.layout.columns-1,Number(op.col)||0)),row:Math.max(0,Math.min(p.layout.rows-1,Number(op.row)||0))};const previous=p.nodes.find(n=>n.id===id);if(previous)Object.assign(previous,node);else{p.nodes.push(node);added.add(id);}focus('bottom','',1);}
+    else if(op.action==='edge'&&id){const edge={id,from:String(op.from||''),to:String(op.to||''),text};const old=p.edges.find(e=>e.id===id);if(old)Object.assign(old,edge);else p.edges.push(edge);focus('bottom','',1);}
+    else if(op.action==='question'){p.question=text;if(text)focus('bottom','',4);}
+    else if(op.action==='student_question'&&!['queued','listening','recognizing'].includes(questionMode)){showStudentQuestion('answering',text,true);if(text)focus('bottom','',1);}
   }
   if(following)view=pages.length-1;
-  if((cleared||changedPage)&&following)$('boardBody').scrollTo({top:0,behavior:'instant'});
+  if(changedPage&&following)$('boardBody').scrollTo({top:0,behavior:'instant'});
   paint(added,changedPage);if(changedPage&&following)enterBoardPage();return displayedBoard();
 }
 $('boardPrev').onclick=()=>{if(view>0){view--;following=false;paint(new Set(),true);$('boardBody').scrollTop=0;enterBoardPage(-1);}};

@@ -60,7 +60,7 @@ def _ensure_llm():
 def instructions(system):
     rules = (ROOT / 'runtime_instructions.md').read_text()
     schema = json.loads((ROOT / 'response.schema.json').read_text())
-    return rules + '\n' + system + '\n输出 JSON，speech 必须是第一个字段。第一句话必须有实质性讲解：直接解释概念、回答核心问题或说明关键关系。简短问候可以合并，但禁止只用自我介绍、“收到”“我想想”“我们来看看”等作为首段。第一句控制在 15—24 个汉字，句号后再展开；本轮话术最多 100 字。学生关键问题写入 student_question，关键讲法写入 solution，需要关系图时返回 diagram。板书简短，不复制话术。\nSchema：' + json.dumps(schema, ensure_ascii=False, separators=(',', ':'))
+    return rules + '\n' + system + '\n输出 JSON，speech 必须是第一个字段。首句要有实质内容：讲师解释概念或直接回答，面试官直接提问；面试不为抢首声提前说参考答案。简短问候可以合并，但禁止只用自我介绍、“收到”“我想想”“我们来看看”等作为首段。第一句通常 15—24 个汉字，句号后再展开；本轮话术通常最多 100 字，用户要求拆题可适当展开。学生关键问题写入 student_question，讲师关键讲法写入 solution，默认模拟面试不展示解法，需要关系图时返回 diagram。板书简短，不复制话术。\nSchema：' + json.dumps(schema, ensure_ascii=False, separators=(',', ':'))
 
 
 def _prompt(system, user_input):
